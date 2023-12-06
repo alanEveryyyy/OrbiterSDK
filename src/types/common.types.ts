@@ -49,6 +49,9 @@ export interface IChainInfo {
     category: string[];
   };
   contracts?: string[];
+  contract?: {
+    [k: string]: string;
+  };
   tokens: IToken[] | [];
   xvmList: string[];
   infoURL?: string;
@@ -58,6 +61,11 @@ export interface IQueryChainInfosData {
   data: IChainInfo[];
 }
 
+export interface ITransferExt {
+  contractType: string;
+  receiveStarknetAddress: string;
+}
+
 export interface ITransferConfig {
   fromChainID: string;
   fromCurrency: string;
@@ -65,6 +73,7 @@ export interface ITransferConfig {
   toCurrency: string;
   transferValue: number;
   crossAddressReceipt?: string;
+  transferExt?: ITransferExt;
 }
 
 export interface IBridgeConfig {
@@ -124,11 +133,13 @@ export interface ICrossFunctionParams {
   fromCurrency: string;
   toCurrency: string;
   crossAddressReceipt?: string;
+  transferExt?: ITransferExt;
 }
 
 export type TCrossConfig = ICrossFunctionParams & {
   account: string;
   tokenAddress: string;
+  isETH: boolean;
   to: string;
   tValue: {
     state: boolean;

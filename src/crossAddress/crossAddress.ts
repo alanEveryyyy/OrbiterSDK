@@ -5,12 +5,14 @@ import {
   isHexString,
   Provider,
   Signer,
+  toBigInt,
 } from "ethers-6";
 import { Coin_ABI, CROSS_ADDRESS_ABI } from "../constant/abi";
 import { hexConcat, hexDataSlice, sendTransaction, sleep } from "./util";
 import { padStart } from "lodash";
 import ChainsService from "../services/ChainsService";
 import BigNumber from "bignumber.js";
+import { ITransferExt } from "../types";
 
 export const CrossAddressTypes = {
   "0x01": "Cross Ethereum Address",
@@ -73,14 +75,9 @@ export class CrossAddress {
     return await contractErc20.allowance(ownerAddress, contractAddress);
   }
 
-  /**
-   *
-   * @param {string} tokenAddress 0x...
-   * @param {BigInt} amount
-   */
   async approveERC20(
     tokenAddress: string,
-    amount: BigInt,
+    amount: BigNumber,
     contractAddress = this.contractAddress
   ) {
     await this.checkNetworkId();
@@ -104,26 +101,18 @@ export class CrossAddress {
     }
   }
 
-  /**
-   *
-   * @param {string} tokenAddress 0x...
-   * @param {string} to
-   * @param {ethers.BigNumber} amount
-   * @param {{type: string, value: string} | undefined} ext
-   * @return {Promise<{hash: string}>}
-   */
   async transfer(
     to: string,
-    amount: BigNumber,
-    ext: { type: string; value: string } | undefined
+    amount: string,
+    ext: ITransferExt
   ): Promise<{ hash: string }> {
     await this.checkNetworkId();
 
     if (
       ext &&
-      !CrossAddressTypes[ext?.type as keyof typeof CrossAddressTypes]
+      !CrossAddressTypes[ext?.contractType as keyof typeof CrossAddressTypes]
     ) {
-      throw new Error(`Invalid crossAddressType : ${ext.type}`);
+      throw new Error(`Invalid crossAddressType : ${ext.contractType}`);
     }
 
     const contract = new ethers.Contract(
@@ -133,8 +122,7 @@ export class CrossAddress {
     );
 
     const extHex = CrossAddress.encodeExt(ext);
-
-    const options = { value: new BigNumber(amount) };
+    const options = { value: toBigInt(amount) };
 
     return await contract.transfer(to, extHex, options);
   }
@@ -150,16 +138,16 @@ export class CrossAddress {
   async transferERC20(
     tokenAddress: string,
     to: string,
-    amount: BigInt,
-    ext?: { type: string; value: string } | undefined
+    amount: BigNumber,
+    ext?: ITransferExt
   ): Promise<{ hash: string }> {
     await this.checkNetworkId();
 
     if (
       ext &&
-      !CrossAddressTypes?.[ext.type as keyof typeof CrossAddressTypes]
+      !CrossAddressTypes?.[ext.contractType as keyof typeof CrossAddressTypes]
     ) {
-      throw new Error(`Invalid crossAddressType : ${ext.type}`);
+      throw new Error(`Invalid crossAddressType : ${ext.contractType}`);
     }
     // Check and approve erc20 amount
     const contractErc20 = new ethers.Contract(
@@ -169,7 +157,7 @@ export class CrossAddress {
     );
 
     const allowance = await this.getAllowance(contractErc20);
-    if (amount > allowance) {
+    if (amount.gt(allowance)) {
       await this.approveERC20(tokenAddress, amount);
     }
 
@@ -184,7 +172,7 @@ export class CrossAddress {
 
   async contractApprove(
     tokenAddress: string,
-    amount: BigInt,
+    amount: BigNumber,
     contractAddress?: string
   ) {
     if (!contractAddress) throw new Error("contract approve address is empty!");
@@ -194,31 +182,26 @@ export class CrossAddress {
       this.provider
     );
     const allowance = await this.getAllowance(contractErc20, contractAddress);
-    if (amount > allowance) {
+    if (amount.gt(allowance)) {
       await this.approveERC20(tokenAddress, amount, contractAddress);
     }
   }
 
-  /**
-   *
-   * @param {{type: string, value: string} | undefined} ext
-   * @returns {string} hex
-   */
-  static encodeExt(ext: { type: string; value: string } | undefined): string {
-    if (!ext || !isHexString(ext.type)) {
+  static encodeExt(ext?: ITransferExt): string {
+    if (!ext || !isHexString(ext.contractType)) {
       return "0x";
     }
-    if (!ext.value) {
-      return ext.type;
+    if (!ext.receiveStarknetAddress) {
+      return ext.contractType;
     }
 
-    if (ext.type == "0x03" && isHexString(ext.value)) {
+    if (ext.contractType == "0x03" && isHexString(ext.receiveStarknetAddress)) {
       return hexConcat([
-        ext.type,
-        CrossAddress.fix0xPadStartAddress(ext.value, 66),
+        ext.contractType,
+        CrossAddress.fix0xPadStartAddress(ext.receiveStarknetAddress, 66),
       ]);
     }
-    return hexConcat([ext.type, ext.value]);
+    return hexConcat([ext.contractType, ext.receiveStarknetAddress]);
   }
 
   static fix0xPadStartAddress(address: string, length: number) {

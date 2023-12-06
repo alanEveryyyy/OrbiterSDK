@@ -20,9 +20,9 @@ export default class TokenService {
     return this.instance;
   }
 
-  private async loadTokensByChain(): Promise<void> {
+  private loadTokensByChain() {
     try {
-      const res = (await this.chainsService.getChains()) || [];
+      const res = this.chainsService.getChains() || [];
       this.tokensByChain = this.getTokensAllChain(res);
     } catch (error) {
       console.error("TokenService init failed.");
@@ -34,7 +34,7 @@ export default class TokenService {
       await this.loadingPromise;
     }
     if (!this.tokensByChain.length) {
-      await this.loadTokensByChain();
+      this.loadTokensByChain();
     }
   }
 

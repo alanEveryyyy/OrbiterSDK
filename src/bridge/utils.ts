@@ -69,7 +69,6 @@ export const getTransferValue = (transferInfo: {
 }) => {
   const {
     fromChainID,
-    toChainID,
     transferValue,
     tradingFee,
     fromChainInfo,

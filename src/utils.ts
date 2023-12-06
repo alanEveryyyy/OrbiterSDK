@@ -11,6 +11,7 @@ import {
 import { Coin_ABI } from "./constant/common";
 import { IChainInfo, ICrossRule } from "./types";
 import BigNumber from "bignumber.js";
+import { queryRatesByCurrency } from "./services/ApiService";
 
 export function equalsIgnoreCase(value1: string, value2: string): boolean {
   if (typeof value1 !== "string" || typeof value2 !== "string") {
@@ -98,7 +99,9 @@ export async function requestWeb3(
     }
     if (!result) {
       reject(
-        `Reuqest RPC ERROR：${chainId}-${method}-${JSON.stringify(params)}`
+        `Reuqest RPC ERROR：${chainInfo.chainId}-${
+          params.method
+        }-${JSON.stringify(params)}`
       );
     }
   });
@@ -115,14 +118,7 @@ export function getContract(
   if (localChainID === 4 || localChainID === 44) {
     return;
   }
-  const ecourseContractInstance = new ethers.Contract(
-    contractAddress,
-    ABI ? ABI : Coin_ABI
-  );
-  if (!ecourseContractInstance) {
-    return null;
-  }
-  return ecourseContractInstance;
+  return new ethers.Contract(contractAddress, ABI ? ABI : Coin_ABI);
 }
 
 export function isEthTokenAddress(tokenAddress: string, chainInfo: IChainInfo) {
@@ -184,16 +180,107 @@ export async function getTransferGasLimit(
 export function getRealTransferValue(
   selectMakerConfig: ICrossRule,
   transferValue: number | string
-): BigInt {
+) {
   if (!Object.keys(selectMakerConfig).length) {
     throw new Error(
       "get real transfer value failed, selectMakerConfig can not be empty!"
     );
   }
-  return BigInt(
-    new BigNumber(transferValue)
-      .plus(new BigNumber(selectMakerConfig.tradingFee))
-      .multipliedBy(new BigNumber(10 ** selectMakerConfig.fromChain.decimals))
-      .toFixed()
-  );
+  return new BigNumber(transferValue)
+    .plus(new BigNumber(selectMakerConfig.tradingFee))
+    .multipliedBy(new BigNumber(10 ** selectMakerConfig.fromChain.decimals))
+    .toFixed();
 }
+
+export function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(null);
+    }, ms);
+  });
+}
+
+let exchangeRates: any = null;
+
+async function cacheExchangeRates(currency = "USD") {
+  exchangeRates = await queryRatesByCurrency(currency);
+  if (exchangeRates) {
+    const bnbExchangeRates = await queryRatesByCurrency("bnb");
+    if (bnbExchangeRates && bnbExchangeRates.USD) {
+      const usdTobnb = 1 / Number(bnbExchangeRates.USD);
+      exchangeRates.BNB = String(usdTobnb);
+    }
+    return exchangeRates;
+  } else {
+    return undefined;
+  }
+}
+
+export async function getExchangeToUsdRate(sourceCurrency = "ETH") {
+  sourceCurrency = sourceCurrency.toUpperCase();
+
+  const currency = "USD";
+
+  let rate = -1;
+  try {
+    if (!exchangeRates) {
+      exchangeRates = await cacheExchangeRates(currency);
+    }
+    if (exchangeRates?.[sourceCurrency]) {
+      rate = exchangeRates[sourceCurrency];
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return new BigNumber(rate);
+}
+
+export async function exchangeToUsd(
+  value: number | BigNumber = 1,
+  sourceCurrency = "ETH"
+) {
+  if (!BigNumber.isBigNumber(value)) {
+    value = new BigNumber(value);
+  }
+
+  const rate = await getExchangeToUsdRate(sourceCurrency);
+  if (rate.comparedTo(0) !== 1) {
+    if (sourceCurrency === "USDT" || sourceCurrency === "USDC") {
+      return value;
+    }
+    return new BigNumber(0);
+  }
+
+  return value.dividedBy(rate);
+}
+
+export async function getTokenConvertUsd(currency: string) {
+  try {
+    return (await exchangeToUsd(1, currency)).toNumber();
+  } catch (error: any) {
+    throw new Error(`get token convert usd failed: ${error.message}`);
+  }
+}
+
+export const throwNewError = (message: string, error?: any) => {
+  const throwMessage = error ? `${message}: ${error?.message || ""}` : message;
+  throw new Error(throwMessage);
+};
+
+export const getContractByType = (
+  targetChainContracts: { [k: string]: string },
+  value: string
+) => {
+  if (!Object.keys(targetChainContracts).length || !value)
+    return throwNewError("get contract by type error.");
+  let targetContract = "";
+  for (const key in targetChainContracts) {
+    const element = targetChainContracts[key];
+    if (element === value) {
+      targetContract = key;
+      break;
+    }
+  }
+  return targetContract;
+};

@@ -38,8 +38,14 @@ export default class OBridge {
 
   public async toBridge(transferConfig: ITransferConfig) {
     if (!this.signer) throw new Error("Can not find signer, please check it!");
-    const { fromChainID, fromCurrency, toChainID, toCurrency, transferValue } =
-      transferConfig;
+    const {
+      fromChainID,
+      fromCurrency,
+      toChainID,
+      toCurrency,
+      transferValue,
+      transferExt,
+    } = transferConfig;
     const fromChainInfo = await this.getChainsService().getChainInfoAsync(
       fromChainID
     );
@@ -65,11 +71,16 @@ export default class OBridge {
       throw new Error(
         "Not in the correct price range, please check your value"
       );
-    return await this.crossControl.getCrossFunction(this.signer, {
-      ...transferConfig,
-      fromChainInfo,
-      toChainInfo,
-      selectMakerConfig,
-    });
+    try {
+      return await this.crossControl.getCrossFunction(this.signer, {
+        ...transferConfig,
+        fromChainInfo,
+        toChainInfo,
+        selectMakerConfig,
+        transferExt,
+      });
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   }
 }
