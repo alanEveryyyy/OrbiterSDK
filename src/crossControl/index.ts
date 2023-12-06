@@ -1,4 +1,4 @@
-import { Signer } from "ethers-6";
+import { Signer, toBigInt } from "ethers-6";
 import ethers from "ethers";
 import { submitSignedTransactionsBatch, utils, Wallet } from "zksync";
 import { CrossAddress } from "../crossAddress/crossAddress";
@@ -183,14 +183,14 @@ export default class CrossControl {
         contractAddress,
         account,
         selectMakerConfig,
-        new BigNumber(amount),
+        toBigInt(amount),
         crossAddressReceipt ?? account,
         fromChainID,
         transferValue
       );
       return tx;
     } catch (error) {
-      throwNewError("XVM transfer error", error);
+      return throwNewError("XVM transfer error", error);
     }
   }
 

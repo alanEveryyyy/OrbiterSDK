@@ -4,14 +4,13 @@ import RLP from "rlp";
 import { Signer, ethers } from "ethers-6";
 import { ICrossRule } from "../types";
 import ChainsService from "../services/ChainsService";
-import BigNumber from "bignumber.js";
 
 export async function XVMSwap(
   signer: Signer,
   contractAddress: string,
   account: string,
   selectMakerConfig: ICrossRule,
-  value: BigNumber,
+  value: BigInt,
   toWalletAddress: string,
   fromChainID: string,
   transferValue: string | number

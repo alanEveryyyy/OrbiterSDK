@@ -44,13 +44,14 @@ describe("bridge tests", () => {
       // add crossAddressReceipt: owner For test xvm
       crossAddressReceipt: owner,
     };
+    let result = null;
     try {
-      const tx = await bridge.toBridge(xvmCrossConfig);
-      console.log(tx.hash);
-      expect(tx.hash).toBeDefined;
+      result = await bridge.toBridge(xvmCrossConfig);
     } catch (error: any) {
       console.log(error.message);
     }
+    console.log(result.hash);
+    expect(result.hash).toBeDefined;
   });
 
   test("evm ETH cross to op test", async () => {
@@ -61,13 +62,14 @@ describe("bridge tests", () => {
       toCurrency: "ETH",
       transferValue: 0.001,
     };
+    let result = null;
     try {
-      const tx = await bridge.toBridge(evmCrossConfig);
-      console.log(tx.hash);
-      expect(tx.hash).toBeDefined;
+      result = await bridge.toBridge(evmCrossConfig);
     } catch (error: any) {
       console.log(error.message);
     }
+    console.log(result.hash);
+    expect(result.hash).toBeDefined;
   });
 
   test("zksync lite ETH cross to op test", async () => {
@@ -78,13 +80,14 @@ describe("bridge tests", () => {
       toCurrency: "ETH",
       transferValue: 0.001,
     };
+    let result = null;
     try {
-      const tx = await bridge.toBridge(zksyncCrossConfig);
-      console.log(tx.txHash);
-      expect(tx.txHash).toBeDefined;
+      result = await bridge.toBridge(zksyncCrossConfig);
     } catch (error: any) {
       console.log(error.message);
     }
+    console.log(result.txHash);
+    expect(result.txHash).toBeDefined;
   });
 
   // test("loopring ETH cross test", async () => {
@@ -129,7 +132,7 @@ describe("bridge tests", () => {
   //   expect(tx.txHash).toBeDefined;
   // });
 
-  test.only("transfer to starknet ETH cross by goerli test", async () => {
+  test("transfer to starknet ETH cross by goerli test", async () => {
     const starknetCrossConfig = {
       fromChainID: "5",
       fromCurrency: "ETH",
@@ -142,12 +145,13 @@ describe("bridge tests", () => {
           "0x07ee96f568974c14904bb2d8d8e5f756f7323fc486c3b0d0c4825719bbaeb296",
       },
     };
+    let result = null;
     try {
-      const tx = await bridge.toBridge(starknetCrossConfig);
-      console.log(tx.hash);
-      expect(tx.hash).toBeDefined;
+      result = await bridge.toBridge(starknetCrossConfig);
     } catch (error: any) {
       console.log(error.message);
     }
+    console.log(result.hash);
+    expect(result.hash).toBeDefined;
   });
 });

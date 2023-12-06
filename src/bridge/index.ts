@@ -4,6 +4,7 @@ import TokenService from "../services/TokenService";
 import CrossControl from "../crossControl";
 import { IOBridgeConfig, ITransferConfig } from "../types";
 import { Signer } from "ethers-6";
+import { throwNewError } from "../utils";
 
 export default class OBridge {
   private signer: Signer;
@@ -79,8 +80,8 @@ export default class OBridge {
         selectMakerConfig,
         transferExt,
       });
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error) {
+      throwNewError("Bridge getCrossFunction error", error);
     }
   }
 }
