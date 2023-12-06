@@ -1,4 +1,5 @@
 import { IChainInfo, ITokensByChain } from "../types";
+import { throwNewError } from "../utils";
 import ChainsService from "./ChainsService";
 
 export default class TokenService {
@@ -25,7 +26,7 @@ export default class TokenService {
       const res = this.chainsService.getChains() || [];
       this.tokensByChain = this.getTokensAllChain(res);
     } catch (error) {
-      console.error("TokenService init failed.");
+      throwNewError("TokenService init failed.");
     }
   }
 

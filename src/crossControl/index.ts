@@ -88,7 +88,7 @@ export default class CrossControl {
         tValue,
         account: await signer.getAddress(),
       };
-    } catch (error: any) {
+    } catch (error) {
       throwNewError("init cross config error.", error);
     }
   }
@@ -116,8 +116,7 @@ export default class CrossControl {
         crossAddressReceipt,
       })
     ) {
-      console.log("by xvm~~~~~~~");
-      return await this.handleXVMContract();
+      return await this.xvmTransfer();
     }
     switch (fromChainID) {
       case CHAIN_ID_MAINNET.zksync:
@@ -146,13 +145,12 @@ export default class CrossControl {
         ) {
           return await this.transferToStarkNet();
         }
-        console.log("by evm~~~~~~~");
         return await this.evmTransfer();
       }
     }
   }
 
-  private async handleXVMContract(): Promise<any> {
+  private async xvmTransfer(): Promise<any> {
     const {
       fromChainID,
       fromChainInfo,
@@ -191,8 +189,8 @@ export default class CrossControl {
         transferValue
       );
       return tx;
-    } catch (e) {
-      console.error(e, "error");
+    } catch (error) {
+      throwNewError("XVM transfer error", error);
     }
   }
 
@@ -242,7 +240,7 @@ export default class CrossControl {
         );
         await transferResult.wait();
         return await transferContract.send(objOption);
-      } catch (error: any) {
+      } catch (error) {
         return throwNewError("evm transfer error", error);
       }
     }
@@ -339,7 +337,7 @@ export default class CrossControl {
           token: tokenAddress,
           amount,
         });
-      } catch (error: any) {
+      } catch (error) {
         return throwNewError("sync wallet syncTransfer was wrong", error);
       }
     }
@@ -373,7 +371,7 @@ export default class CrossControl {
   //       amount,
   //       memo
   //     );
-  //   } catch (error: any) {
+  //   } catch (error) {
   //     const errorEnum = {
   //       "account is not activated":
   //         "This Loopring account is not yet activated, please activate it before transferring.",
@@ -509,7 +507,7 @@ export default class CrossControl {
         fromChainID,
         fromChainInfo
       );
-    } catch (error: any) {
+    } catch (error) {
       return throwNewError("starknet transfer error", error);
     }
   }

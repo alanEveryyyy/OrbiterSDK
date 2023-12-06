@@ -85,15 +85,8 @@ export async function requestWeb3(
           result = await translatePerform(provider, params);
           resolve(result);
           break;
-        } catch (error: unknown) {
-          console.error(
-            "request rpc error:",
-            url,
-            error,
-            chainInfo.chainId,
-            params.method,
-            JSON.stringify(params)
-          );
+        } catch (error) {
+          throwNewError("request rpc error:", error);
         }
       }
     }
@@ -171,7 +164,7 @@ export async function getTransferGasLimit(
       return gasLimit;
     }
   } catch (err) {
-    console.warn("getTransferGasLimit error: ", err);
+    throwNewError("get transfer gasLimit error", err);
   }
 
   return gasLimit;
@@ -230,7 +223,7 @@ export async function getExchangeToUsdRate(sourceCurrency = "ETH") {
       rate = exchangeRates[sourceCurrency];
     }
   } catch (error) {
-    console.error(error);
+    throwNewError("getExchangeToUsdRate error", error);
   }
 
   return new BigNumber(rate);

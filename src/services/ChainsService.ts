@@ -1,5 +1,6 @@
 import { queryTradingPairs } from "./ApiService";
 import { IChainInfo } from "../types";
+import { throwNewError } from "../utils";
 
 export default class ChainsService {
   private static instance: ChainsService;
@@ -14,7 +15,7 @@ export default class ChainsService {
     try {
       this.chains = (await queryTradingPairs()).chainList;
     } catch (error) {
-      console.error("chainsService init failed.");
+      throwNewError("chainsService init failed.");
     }
   }
 

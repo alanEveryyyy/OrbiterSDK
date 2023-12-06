@@ -13,6 +13,7 @@ import { padStart } from "lodash";
 import ChainsService from "../services/ChainsService";
 import BigNumber from "bignumber.js";
 import { ITransferExt } from "../types";
+import { throwNewError } from "../utils";
 
 export const CrossAddressTypes = {
   "0x01": "Cross Ethereum Address",
@@ -43,7 +44,9 @@ export class CrossAddress {
         ? chainInfo.xvmList[0]
         : "");
     if (!this.contractAddress) {
-      console.log("Sorry, miss param [contractAddress]");
+      throwNewError(
+        "CrossAddress class init error: Sorry, miss param [contractAddress]"
+      );
     }
 
     this.provider = provider;

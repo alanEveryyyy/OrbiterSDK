@@ -1,5 +1,6 @@
 import { queryTradingPairs } from "./ApiService";
 import { IChainInfo, ICrossRule } from "../types";
+import { throwNewError } from "../utils";
 
 export default class CrossRulesService {
   private static instance: CrossRulesService;
@@ -14,7 +15,7 @@ export default class CrossRulesService {
     try {
       this.crossRules = (await queryTradingPairs()).ruleList;
     } catch (error) {
-      console.error("crossRules init failed.");
+      throwNewError("crossRules init failed.");
     }
   }
 

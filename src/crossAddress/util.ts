@@ -8,7 +8,7 @@ import {
   hexlify,
   isHexString,
 } from "ethers-6";
-import { requestWeb3 } from "../utils";
+import { requestWeb3, throwNewError } from "../utils";
 import { IChainInfo } from "../types";
 
 export function sleep(ms: number) {
@@ -33,8 +33,7 @@ export function hexDataSlice(
   if (typeof data !== "string") {
     data = hexlify(data);
   } else if (!isHexString(data) || data.length % 2) {
-    console.error("invalid hexData", JSON.stringify(data));
-    throw new Error("invalid hexData");
+    throwNewError("hexDataSlice error: invalid hexData");
   }
 
   offset = 2 + 2 * offset;
