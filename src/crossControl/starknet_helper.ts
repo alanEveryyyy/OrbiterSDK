@@ -14,13 +14,14 @@ import {
 } from "../constant/common";
 import { throwNewError } from "../utils";
 import { IChainInfo } from "../types";
+import BigNumber from "bignumber.js";
 
 export async function sendTransfer(
-  l1Address,
-  tokenAddress,
-  makerAddress,
-  amount,
-  fromChainID,
+  l1Address: string,
+  tokenAddress: string,
+  makerAddress: string,
+  amount: BigNumber,
+  fromChainID: string,
   fromChainInfo: IChainInfo
 ) {
   l1Address = l1Address.toLowerCase();

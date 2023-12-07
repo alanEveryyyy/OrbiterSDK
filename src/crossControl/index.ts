@@ -4,7 +4,6 @@ import { submitSignedTransactionsBatch, utils, Wallet } from "zksync";
 import { CrossAddress } from "../crossAddress/crossAddress";
 import { XVMSwap } from "./xvm";
 import loopring from "./loopring";
-import zkspace from "./zkspace";
 import {
   getTransferValue,
   getZkSyncProvider,
@@ -28,8 +27,6 @@ import {
 import BigNumber from "bignumber.js";
 import { ERC20TokenType, ETHTokenType } from "@imtbl/imx-sdk";
 import { IMXHelper } from "./imx_helper";
-import Web3 from "web3";
-import { DydxHelper } from "./dydx_helper";
 import {
   getAccountAddressError,
   sendTransfer,
@@ -125,18 +122,12 @@ export default class CrossControl {
       // case CHAIN_ID_MAINNET.loopring:
       // case CHAIN_ID_TESTNET.loopring_test:
       // return await this.loopringTransfer();
-      // case CHAIN_ID_MAINNET.zkspace:
-      // case CHAIN_ID_TESTNET.zkspace_test:
-      // return await this.zkspaceTransfer();
       case CHAIN_ID_MAINNET.starknet:
       case CHAIN_ID_TESTNET.starknet_test:
         return await this.starknetTransfer();
       case CHAIN_ID_MAINNET.imx:
       case CHAIN_ID_TESTNET.imx_test:
         return await this.imxTransfer();
-      case CHAIN_ID_MAINNET.dydx:
-      case CHAIN_ID_TESTNET.dydx_test:
-        return await this.dydxTransfer();
 
       default: {
         if (
@@ -387,96 +378,6 @@ export default class CrossControl {
   //   }
   // }
 
-  // private async zkspaceTransfer() {
-  //   const { selectMakerConfig, fromChainID, account, tValue } =
-  //     this.crossConfig;
-  //   try {
-  //     const walletAccount = account;
-  //     const privateKey = await zkspace.getL1SigAndPriVateKey(this.signer);
-  //     const transferValue = utils.closestPackableTransactionAmount(
-  //       tValue.tAmount
-  //     );
-
-  //     const accountInfo = await zkspace.getAccountInfo(
-  //       fromChainID,
-  //       privateKey,
-  //       this.signer,
-  //       walletAccount
-  //     );
-  //     const feeTokenId = 0;
-  //     const zksNetWorkID = fromChainID === CHAIN_ID_MAINNET.zkspace ? 13 : 129;
-
-  //     const fee = await zkspace.getZKSpaceTransferGasFee(
-  //       fromChainID,
-  //       walletAccount
-  //     );
-
-  //     const transferFee = utils.closestPackableTransactionFee(
-  //       ethers.utils.parseUnits(fee.toString(), 18)
-  //     );
-
-  //     const getZksTokenID = fromChainID === CHAIN_ID_MAINNET.zkspace ? 12 : 512;
-
-  //     const zksTokenInfos = await zkspace.getAllZksTokenList(getZksTokenID);
-  //     const tokenAddress = selectMakerConfig.toChain.tokenAddress;
-  //     const tokenInfo = zksTokenInfos.find(
-  //       (item: any) => item.address === tokenAddress
-  //     );
-  //     const { pubKey, l2SignatureOne } = zkspace.getL2SigOneAndPK(
-  //       privateKey,
-  //       accountInfo,
-  //       walletAccount,
-  //       tokenInfo ? tokenInfo.id : 0,
-  //       transferValue,
-  //       feeTokenId,
-  //       transferFee,
-  //       zksNetWorkID,
-  //       selectMakerConfig
-  //     );
-
-  //     const l2SignatureTwo = await zkspace.getL2SigTwoAndPK(
-  //       this.signer,
-  //       accountInfo,
-  //       transferValue,
-  //       fee,
-  //       zksNetWorkID,
-  //       tokenInfo,
-  //       selectMakerConfig
-  //     );
-  //     const req = {
-  //       signature: {
-  //         type: "EthereumSignature",
-  //         signature: l2SignatureTwo,
-  //       },
-  //       fastProcessing: false,
-  //       tx: {
-  //         type: "Transfer",
-  //         accountId: accountInfo.id,
-  //         from: walletAccount,
-  //         to: selectMakerConfig.recipient,
-  //         token: tokenInfo ? tokenInfo.id : 0,
-  //         amount: transferValue.toString(),
-  //         feeToken: feeTokenId,
-  //         fee: transferFee.toString(),
-  //         chainId: zksNetWorkID,
-  //         nonce: accountInfo.nonce,
-  //         signature: {
-  //           pubKey,
-  //           signature: l2SignatureOne,
-  //         },
-  //       },
-  //     };
-
-  //     const transferResult = await zkspace.sendTransfer(fromChainID, req);
-  //     const txHash = transferResult?.data?.data.replace("sync-tx:", "0x");
-  //     return {
-  //       ...transferResult,
-  //       getTransferResult: zkspace.getFristResult(fromChainID, txHash),
-  //     };
-  //   } catch (error: any) {
-  //     throwNewError("zkspace Transfer error", error);
-  //   }
-  // }
   private async starknetTransfer() {
     const {
       selectMakerConfig,
@@ -618,42 +519,7 @@ export default class CrossControl {
         receiver: selectMakerConfig.recipient,
       });
     } catch (error: any) {
-      throw new Error(`Imx transfer error: ${error.message}`);
-    }
-  }
-
-  private async dydxTransfer() {
-    const { selectMakerConfig, fromChainID, fromChainInfo, account, tValue } =
-      this.crossConfig;
-    const dydxRpcs = await getRpcList(fromChainInfo);
-    try {
-      const dydxHelper = new DydxHelper(
-        fromChainID,
-        new Web3(dydxRpcs[0]),
-        "TypedData"
-      );
-      const dydxMakerInfo = dydxHelper.getMakerInfo(
-        selectMakerConfig.recipient
-      );
-      const dydxClient = await dydxHelper.getDydxClient(account, false, true);
-      const dydxAccount = await dydxHelper.getAccount(account);
-
-      const params = {
-        clientId: dydxHelper.generateClientId(account),
-        amount: new BigNumber(tValue.tAmount).dividedBy(10 ** 6).toString(), // Only usdc
-        expiration: new Date(
-          new Date().getTime() + 86400000 * 30
-        ).toISOString(),
-        receiverAccountId: dydxHelper.getAccountId(selectMakerConfig.recipient),
-        receiverPublicKey: dydxMakerInfo.starkKey,
-        receiverPositionId: String(dydxMakerInfo.positionId),
-      };
-      return await dydxClient.private.createTransfer(
-        params,
-        dydxAccount.positionId
-      );
-    } catch (error: any) {
-      throwNewError("dydx transfer error", error);
+      throwNewError("Imx transfer error", error);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { ETHTokenType, ImmutableXClient } from "@imtbl/imx-sdk";
+import { ImmutableXClient } from "@imtbl/imx-sdk";
 import config from "../constant/config";
 import { CHAIN_ID_MAINNET, IMX_CONTRACTS } from "../constant/common";
 

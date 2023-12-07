@@ -1,5 +1,4 @@
 import {
-  BigNumberish,
   Contract,
   ethers,
   isHexString,
@@ -8,7 +7,7 @@ import {
   toBigInt,
 } from "ethers-6";
 import { Coin_ABI, CROSS_ADDRESS_ABI } from "../constant/abi";
-import { hexConcat, hexDataSlice, sendTransaction, sleep } from "./util";
+import { hexConcat, hexDataSlice, sleep } from "./util";
 import { padStart } from "lodash";
 import ChainsService from "../services/ChainsService";
 import BigNumber from "bignumber.js";

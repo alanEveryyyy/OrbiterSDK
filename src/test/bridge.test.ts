@@ -103,19 +103,6 @@ describe("bridge tests", () => {
   //   expect(tx.txHash).toBeDefined;
   // });
 
-  // test.only("zkSpace ETH cross test", async () => {
-  //   const zkSpaceCrossConfig = {
-  //     fromChainID: "ZKSpace_test",
-  //     fromCurrency: "ETH",
-  //     toChainID: "420",
-  //     toCurrency: "ETH",
-  //     transferValue: 0.001,
-  //   };
-  //   const result = await bridge.toBridge(zkSpaceCrossConfig);
-  //   console.log(result);
-  //   expect(result).toBeDefined;
-  // });
-
   // test.only("starknet ETH cross to goerli test", async () => {
   //   const starknetCrossConfig = {
   //     fromChainID: "SN_GOERLI",
@@ -142,7 +129,7 @@ describe("bridge tests", () => {
       transferExt: {
         contractType: "0x03",
         receiveStarknetAddress:
-          "0x07ee96f568974c14904bb2d8d8e5f756f7323fc486c3b0d0c4825719bbaeb296",
+          "0x04CC0189A24723B68aEeFf84EEf2c0286a1F03b7AECD14403E130Db011571f37",
       },
     };
     let result = null;
@@ -153,5 +140,23 @@ describe("bridge tests", () => {
     }
     console.log(result.hash);
     expect(result.hash).toBeDefined;
+  });
+
+  test("imx transfer ETH to scroll test", async () => {
+    let result = null;
+    try {
+      const imxCrossConfig = {
+        fromChainID: "immutableX_test",
+        fromCurrency: "ETH",
+        toChainID: "534351",
+        toCurrency: "ETH",
+        transferValue: 0.001,
+      };
+      result = await bridge.toBridge(imxCrossConfig);
+    } catch (error: any) {
+      console.log(error.message);
+    }
+    console.log(result);
+    expect(result).toBeDefined;
   });
 });

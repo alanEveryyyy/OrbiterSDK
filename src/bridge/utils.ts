@@ -205,13 +205,7 @@ function AmountMaxDigits(chain: string | number) {
 function AmountRegion(chain: string | number) {
   if (typeof chain === "number") {
     let max = BigNumber(
-      2 **
-        (MAX_BITS[
-          CHAIN_INDEX[
-            chain as keyof typeof CHAIN_INDEX
-          ] as keyof typeof MAX_BITS
-        ] || 256) -
-        1
+      2 ** (MAX_BITS[chain as keyof typeof MAX_BITS] || 256) - 1
     );
     return {
       min: BigNumber(0),
@@ -219,7 +213,7 @@ function AmountRegion(chain: string | number) {
     };
   }
   let max = BigNumber(
-    2 ** (MAX_BITS[chain.toLowerCase() as keyof typeof MAX_BITS] || 256) - 1
+    2 ** (MAX_BITS[chain as keyof typeof MAX_BITS] || 256) - 1
   );
   return {
     min: BigNumber(0),

@@ -1,8 +1,6 @@
 import {
   BigNumberish,
   BytesLike,
-  Log,
-  Provider,
   Signer,
   TransactionResponse,
   hexlify,
