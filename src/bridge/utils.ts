@@ -7,9 +7,10 @@ import {
 } from "../constant/common";
 import { IChainInfo, ICrossRule } from "../types";
 import BigNumber from "bignumber.js";
-import { equalsIgnoreCase } from "../utils";
+import { equalsIgnoreCase, throwNewError } from "../utils";
 import Axios from "axios";
 import * as zksync from "zksync";
+import { queryRatesByCurrency } from "../services/ApiService";
 
 export const isExecuteXVMContract = (sendInfo: {
   fromChainID: number | string;
@@ -301,13 +302,15 @@ export async function getRates(currency: string) {
     const resp = await Axios.get(
       `https://api.coinbase.com/v2/exchange-rates?currency=${currency}`
     );
+    console.log(resp);
     const data = resp.data?.data;
     if (!data || !equalsIgnoreCase(data.currency, currency) || !data.rates) {
       return undefined;
     }
     return data.rates;
-  } catch (error) {
-    return undefined;
+  } catch (error: any) {
+    console.log(error);
+    throwNewError(error);
   }
 }
 

@@ -5,9 +5,10 @@ import CrossControl from "../crossControl";
 import { IOBridgeConfig, ITransferConfig } from "../types";
 import { Signer } from "ethers-6";
 import { throwNewError } from "../utils";
+import { Account } from "starknet";
 
 export default class OBridge {
-  private signer: Signer;
+  private signer: Signer | Account | any;
   private chainsService: ChainsService;
   private tokensService: TokenService;
   private crossRulesService: CrossRulesService;
@@ -21,7 +22,7 @@ export default class OBridge {
     this.crossControl = CrossControl.getInstance();
   }
 
-  public updateSigner(signer: Signer): void {
+  public updateSigner(signer: Signer | Account): void {
     this.signer = signer;
   }
 

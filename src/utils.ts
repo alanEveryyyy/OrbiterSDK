@@ -257,7 +257,9 @@ export async function getTokenConvertUsd(currency: string) {
 }
 
 export const throwNewError = (message: string, error?: any) => {
-  const throwMessage = error ? `${message}: ${error?.message || ""}` : message;
+  const throwMessage = error
+    ? `${message} => ${error?.message || error || ""}`
+    : message;
   throw new Error(throwMessage);
 };
 

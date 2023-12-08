@@ -120,13 +120,6 @@ export const DYDX_MAKERS = {
 
 export const UINT_256_MAX = (1n << 256n) - 1n;
 
-export const STARKNET_CROSS_CONTRACT_ADDRESS = {
-  "mainnet-alpha":
-    "0x0173f81c529191726c6e7287e24626fe24760ac44dae2a1f7e02080230f8458b",
-  "goerli-alpha":
-    "0x0457bf9a97e854007039c43a6cc1a81464bd2a4b907594dabc9132c162563eb3",
-};
-
 export const L1_TO_L2_ADDRESSES = {
   "0x095d2918b03b2e86d68551dcf11302121fb626c9": {
     "mainnet-alpha":

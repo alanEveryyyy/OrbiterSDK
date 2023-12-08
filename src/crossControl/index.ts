@@ -32,11 +32,15 @@ import {
   sendTransfer,
   starknetHashFormat,
 } from "./starknet_helper";
+import { Account } from "starknet";
 
 export default class CrossControl {
   private static instance: CrossControl;
   private crossConfig: TCrossConfig = {} as TCrossConfig;
-  private signer: Signer = null as unknown as Signer;
+  private signer: Signer | Account | any = null as unknown as
+    | Signer
+    | Account
+    | any;
 
   constructor() {}
 
@@ -49,7 +53,7 @@ export default class CrossControl {
   }
 
   private async initCrossFunctionConfig(
-    signer: Signer,
+    signer: Signer | Account | any,
     crossParams: ICrossFunctionParams
   ) {
     this.signer = signer;
@@ -83,7 +87,9 @@ export default class CrossControl {
         isETH,
         to,
         tValue,
-        account: await signer.getAddress(),
+        account: signer?.getAddress
+          ? await signer?.getAddress()
+          : signer.address,
       };
     } catch (error) {
       throwNewError("init cross config error.", error);
@@ -91,7 +97,7 @@ export default class CrossControl {
   }
 
   public async getCrossFunction(
-    signer: Signer,
+    signer: Signer | Account,
     crossParams: ICrossFunctionParams
   ) {
     await this.initCrossFunctionConfig(signer, crossParams);
@@ -121,7 +127,7 @@ export default class CrossControl {
         return await this.zkTransfer();
       // case CHAIN_ID_MAINNET.loopring:
       // case CHAIN_ID_TESTNET.loopring_test:
-      // return await this.loopringTransfer();
+      //   return await this.loopringTransfer();
       case CHAIN_ID_MAINNET.starknet:
       case CHAIN_ID_TESTNET.starknet_test:
         return await this.starknetTransfer();
@@ -334,78 +340,75 @@ export default class CrossControl {
     }
   }
 
-  // private async loopringTransfer() {
-  //   const {
-  //     selectMakerConfig,
-  //     crossAddressReceipt,
-  //     fromChainID,
-  //     tValue,
-  //     tokenAddress,
-  //     fromChainInfo,
-  //     toChainInfo,
-  //     account,
-  //   } = this.crossConfig;
-  //   const p_text = 9000 + Number(toChainInfo.internalId) + "";
-  //   const amount = tValue.tAmount;
-  //   const memo = crossAddressReceipt
-  //     ? `${p_text}_${crossAddressReceipt}`
-  //     : p_text;
-  //   if (memo.length > 128)
-  //     return throwNewError("The sending address is too long");
-  //   try {
-  //     return await loopring.sendTransfer(
-  //       account,
-  //       fromChainID,
-  //       fromChainInfo,
-  //       selectMakerConfig.recipient,
-  //       tokenAddress,
-  //       amount,
-  //       memo
-  //     );
-  //   } catch (error) {
-  //     const errorEnum = {
-  //       "account is not activated":
-  //         "This Loopring account is not yet activated, please activate it before transferring.",
-  //       "User account is frozen":
-  //         "Your Loopring account is frozen, please check your Loopring account status on Loopring website. Get more details here: https://docs.loopring.io/en/basics/key_mgmt.html?h=frozen",
-  //       default: error.message,
-  //     };
-  //     return throwNewError(
-  //       errorEnum[error.message as keyof typeof errorEnum] ||
-  //         errorEnum.default ||
-  //         "Something was wrong by loopring transfer. please check it all"
-  //     );
-  //   }
-  // }
+  private async loopringTransfer() {
+    const {
+      selectMakerConfig,
+      crossAddressReceipt,
+      fromChainID,
+      tValue,
+      tokenAddress,
+      fromChainInfo,
+      toChainInfo,
+      account,
+    } = this.crossConfig;
+    const p_text = 9000 + Number(toChainInfo.internalId) + "";
+    const amount = tValue.tAmount;
+    const memo = crossAddressReceipt
+      ? `${p_text}_${crossAddressReceipt}`
+      : p_text;
+    if (memo.length > 128)
+      return throwNewError("The sending address is too long");
+    try {
+      return await loopring.sendTransfer(
+        account,
+        fromChainID,
+        fromChainInfo,
+        selectMakerConfig.recipient,
+        tokenAddress,
+        amount,
+        memo
+      );
+    } catch (error) {
+      const errorEnum = {
+        "account is not activated":
+          "This Loopring account is not yet activated, please activate it before transferring.",
+        "User account is frozen":
+          "Your Loopring account is frozen, please check your Loopring account status on Loopring website. Get more details here: https://docs.loopring.io/en/basics/key_mgmt.html?h=frozen",
+        default: error.message,
+      };
+      return throwNewError(
+        errorEnum[error.message as keyof typeof errorEnum] ||
+          errorEnum.default ||
+          "Something was wrong by loopring transfer. please check it all"
+      );
+    }
+  }
 
   private async starknetTransfer() {
     const {
       selectMakerConfig,
       fromChainID,
-      toChainID,
       account,
       crossAddressReceipt,
       fromChainInfo,
       tValue,
     } = this.crossConfig;
-    if (
-      !account ||
-      !new RegExp(/^0x[a-fA-F0-9]{40}$/).test(account) ||
-      account === "0x0000000000000000000000000000000000000000"
-    ) {
-      return throwNewError("Please connect correct evm wallet address");
+    if (!account || !new RegExp(/^0x[a-fA-F0-9]{64}$/).test(account)) {
+      return throwNewError("Please check your starknet address.");
     }
+    if (!crossAddressReceipt)
+      return throwNewError("crossAddressReceipt can not be empty.");
     if (selectMakerConfig.recipient.length < 60) {
       return;
     }
     try {
       const contractAddress = selectMakerConfig.fromChain.tokenAddress;
       return await sendTransfer(
-        account,
+        this.signer,
+        crossAddressReceipt,
         contractAddress,
         selectMakerConfig.recipient,
         new BigNumber(tValue.tAmount),
-        fromChainID,
         fromChainInfo
       );
     } catch (error) {

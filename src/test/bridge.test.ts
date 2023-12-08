@@ -2,11 +2,14 @@ import { Provider, Signer, Wallet, ethers } from "ethers-6";
 import { beforeAll, describe, expect, test } from "vitest";
 import ChainsService from "../services/ChainsService";
 import OBridge from "../bridge";
+import { Account, RpcProvider as snProvider } from "starknet";
 
 describe("bridge tests", () => {
   // add your private key to the environment to be able to run the tests
-  const PRIVATE_KEY =
-    "d5d5cbd1beef4c8717d76a49bfdc1d2fb5873eb08a6b41c9233983c18a833ec2";
+  const PRIVATE_KEY = "";
+  const STARKNET_PRIVATE_KEY = "";
+  const STARKNET_ADDRESS =
+    "0x04CC0189A24723B68aEeFf84EEf2c0286a1F03b7AECD14403E130Db011571f37";
 
   let signer: Signer;
   let bridge: OBridge;
@@ -72,6 +75,24 @@ describe("bridge tests", () => {
     expect(result.hash).toBeDefined;
   });
 
+  test.only("evm erc20 cross to op test", async () => {
+    const evmCrossConfig = {
+      fromChainID: "5",
+      fromCurrency: "ETH",
+      toChainID: "420",
+      toCurrency: "USDC",
+      transferValue: 0.001,
+    };
+    let result = null;
+    try {
+      result = await bridge.toBridge(evmCrossConfig);
+    } catch (error: any) {
+      console.log(error.message);
+    }
+    console.log(result.hash);
+    expect(result.hash).toBeDefined;
+  });
+
   test("zksync lite ETH cross to op test", async () => {
     const zksyncCrossConfig = {
       fromChainID: "zksync_test",
@@ -103,20 +124,32 @@ describe("bridge tests", () => {
   //   expect(tx.txHash).toBeDefined;
   // });
 
-  // test.only("starknet ETH cross to goerli test", async () => {
-  //   const starknetCrossConfig = {
-  //     fromChainID: "SN_GOERLI",
-  //     fromCurrency: "ETH",
-  //     toChainID: "5",
-  //     toCurrency: "ETH",
-  //     transferValue: 0.001,
-  //     ext: {
-  //       type: "0x03",
-  //     },
-  //   };
-  //   const tx = await bridge.toBridge(starknetCrossConfig);
-  //   console.log(tx.txHash);
-  //   expect(tx.txHash).toBeDefined;
+  // test("starknet ETH cross to goerli test", async () => {
+  //   const starknetInfo = await chainsService.getChainInfoAsync("SN_GOERLI");
+  //   const provider = new snProvider({ nodeUrl: starknetInfo?.rpc?.[0] || "" });
+  //   const account = new Account(
+  //     provider,
+  //     STARKNET_ADDRESS,
+  //     STARKNET_PRIVATE_KEY
+  //   );
+  //   bridge.updateSigner(account);
+
+  //   let result = null;
+  //   try {
+  //     const starknetCrossConfig = {
+  //       fromChainID: "SN_GOERLI",
+  //       fromCurrency: "ETH",
+  //       toChainID: "5",
+  //       toCurrency: "ETH",
+  //       transferValue: 0.001,
+  //       crossAddressReceipt: "0x15962f38e6998875F9F75acDF8c6Ddc743F11041",
+  //     };
+  //     result = await bridge.toBridge(starknetCrossConfig);
+  //   } catch (error: any) {
+  //     console.log(error.message);
+  //   }
+  //   console.log(result);
+  //   expect(result).toBeDefined;
   // });
 
   test("transfer to starknet ETH cross by goerli test", async () => {

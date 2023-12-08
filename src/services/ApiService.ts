@@ -6,35 +6,8 @@ import {
   ICrossRule,
 } from "../types/common.types";
 import { equalsIgnoreCase } from "../utils";
-import config from "../constant/config";
 
 const COIN_BASE_API_URL = "https://api.coinbase.com";
-
-export async function getZKSTokenList(req: {
-  from: number;
-  limit: number;
-  direction: string;
-  fromChainID: number;
-}) {
-  const url = `${
-    req.fromChainID === 512 ? config.ZKSpace.Rinkeby : config.ZKSpace.Mainnet
-  }/tokens?from=${req.from}&limit=${req.limit}&direction=${req.direction}`;
-  try {
-    const response = await Axios.get(url);
-    if (response.status === 200) {
-      const respData = response.data;
-      if (respData.success) {
-        return respData.data;
-      } else {
-        throw new Error("respData.status not success");
-      }
-    } else {
-      throw new Error("getZKSTokenList NetWorkError");
-    }
-  } catch (error: any) {
-    throw new Error(`getZKSTokenList error = ${error.message}`);
-  }
-}
 
 export async function queryRatesByCurrency(
   currency: string

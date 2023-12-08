@@ -1,53 +1,53 @@
 import {
+  Account,
   Contract,
   RpcProvider,
   uint256,
   validateAndParseAddress,
 } from "starknet";
 import { STARKNET_ERC20_ABI, STARKNET_OB_SOURCE_ABI } from "../constant/abi";
-import { getStarknet } from "get-starknet";
-import {
-  CHAIN_ID_MAINNET,
-  CHAIN_ID_TESTNET,
-  STARKNET_CROSS_CONTRACT_ADDRESS,
-  UINT_256_MAX,
-} from "../constant/common";
-import { throwNewError } from "../utils";
+import { CONTRACT_OLD_TYPE, UINT_256_MAX } from "../constant/common";
+import { getContractByType, throwNewError } from "../utils";
 import { IChainInfo } from "../types";
 import BigNumber from "bignumber.js";
 
 export async function sendTransfer(
+  account: Account,
   l1Address: string,
   tokenAddress: string,
   makerAddress: string,
   amount: BigNumber,
-  fromChainID: string,
   fromChainInfo: IChainInfo
 ) {
   l1Address = l1Address.toLowerCase();
   tokenAddress = tokenAddress.toLowerCase();
   makerAddress = makerAddress.toLowerCase();
-  const networkID = fromChainID === CHAIN_ID_MAINNET.starknet ? 1 : 5;
-  const network = networkID === 1 ? "mainnet-alpha" : "goerli-alpha";
-  const contractAddress = STARKNET_CROSS_CONTRACT_ADDRESS[network];
+  const contractAddress =
+    fromChainInfo.contract &&
+    getContractByType(fromChainInfo.contract, CONTRACT_OLD_TYPE);
+
+  if (!fromChainInfo.contract || !contractAddress) {
+    return throwNewError("Contract not in fromChainInfo.");
+  }
 
   if (!fromChainInfo?.rpc || !fromChainInfo.rpc.length) {
-    throw new Error("starknet rpc not configured");
+    return throwNewError("starknet rpc not configured");
   }
-  const provider = new RpcProvider({ nodeUrl: fromChainInfo.rpc[0] });
-  const tokenContract = new Contract(
-    STARKNET_ERC20_ABI,
-    tokenAddress,
-    provider
+
+  const tokenContract = new Contract(STARKNET_ERC20_ABI, tokenAddress, account);
+  const allowance = await getAllowance(
+    tokenContract,
+    contractAddress,
+    account.address
   );
-  const allowance = await getAllowance(tokenContract, contractAddress);
+
   const crossContract = new Contract(
     STARKNET_OB_SOURCE_ABI,
     contractAddress,
-    provider
+    account
   );
-  const receiverAddress = makerAddress;
 
+  const receiverAddress = makerAddress;
   try {
     let tx;
     if (amount.gt(allowance)) {
@@ -61,10 +61,7 @@ export async function sendTransfer(
         getUint256CalldataFromBN(String(amount)),
         l1Address,
       ]);
-      tx = await getStarknet().account.execute([
-        approveTxCall,
-        transferERC20TxCall,
-      ]);
+      tx = await account.execute([approveTxCall, transferERC20TxCall]);
     } else {
       const transferERC20TxCall = crossContract.populate("transferERC20", [
         tokenAddress,
@@ -72,27 +69,26 @@ export async function sendTransfer(
         getUint256CalldataFromBN(String(amount)),
         l1Address,
       ]);
-      tx = await getStarknet().account.execute(transferERC20TxCall);
+      tx = await account.execute(transferERC20TxCall);
     }
-    return tx?.transaction_hash;
+    return tx;
   } catch (e) {
+    console.log(e);
     return throwNewError("starknet transfer error", e);
   }
 }
 
 export async function getAllowance(
   contractErc20: Contract,
-  contractAddress: string
+  contractAddress: string,
+  address: string
 ) {
-  const ownerAddress = getStarknet().selectedAddress;
-  const allowance = await contractErc20.allowance(
-    ownerAddress,
-    contractAddress
-  );
+  if (!address) return throwNewError("starknet get address error");
+  const allowance = await contractErc20.allowance(address, contractAddress);
   return allowance.remaining.low;
 }
 
-function getUint256CalldataFromBN(bn) {
+function getUint256CalldataFromBN(bn: string) {
   return { type: "struct", ...uint256.bnToUint256(bn) };
 }
 
